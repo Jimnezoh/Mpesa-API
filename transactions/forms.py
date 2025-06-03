@@ -1,7 +1,7 @@
 from django import forms
 
 class PaymentForm(forms.Form):
-    amount = forms.DecimalField(widget=forms.NumberInput(attrs={
+    amount = forms.IntegerField(widget=forms.NumberInput(attrs={
             'class': 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent',
             'placeholder': 'Enter amount'
         }))

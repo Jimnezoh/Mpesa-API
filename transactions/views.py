@@ -54,15 +54,15 @@ def initiate_stk_push(phone_number, amount):
             ).decode()
         
         request_body = {
-            'BusinessShortCode': MPESA_SHORTCODE,
+            'BusinessShortCode': 174379,
             'Password': stk_password,
             'Timestamp': timestamp,
             'TransactionType': 'CustomerPayBillOnline',
             'Amount': amount,
             'PartyA': phone_number,
-            'PartyB': MPESA_SHORTCODE,
+            'PartyB': 174379,
             'PhoneNumber': phone_number,
-            'CallBackURL': CALLBACK_URL,
+            'CallBackURL': 'https://2388-197-248-93-33.ngrok-free.app/mpesa/callback/',
             'AccountReference': 'CompanyXLTD',
             'TransactionDesc': 'Payment of X'
         }
@@ -78,9 +78,24 @@ def initiate_stk_push(phone_number, amount):
     except requests.RequestException as e:
         print(f"Failed to initiate STK Push: {str(e)}")
 
-        
+def format_phone_number(phone_number):
+    if phone_number.startswith('0') and len(phone_number) == 10:
+        return f"254{phone_number[1:]}"
+    elif phone_number.startswith('254'):
+        return phone_number
+    else:
+        raise ValueError("Invalid phone number format")
 
 def index(request):
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            phone = format_phone_number(form.cleaned_data['phone_number'])
+            amount = form.cleaned_data['amount']
+
+            response = initiate_stk_push(phone, amount)
+            print(response)
+
     form = PaymentForm()
     return render(request, 'index.html', {'form': form})
 
