@@ -1,8 +1,8 @@
-import os
+import os,base64, requests
+from datetime import datetime
 from django.shortcuts import render
 from .forms import PaymentForm
 from dotenv import load_dotenv
-import base64
 
 # Create your views here.
 load_dotenv()
@@ -36,6 +36,49 @@ def generate_access_token():
             raise Exception("Failed to generate access token")
     except requests.RequestException as e:
         print(f"Failed to connect to M-Pesa: {str(e)}")
+
+
+#Initiating the STK Push request and handling the response
+def initiate_stk_push(phone_number, amount):
+    try:
+        token = generate_access_token()
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        stk_password = base64.b64encode(
+            f"{MPESA_SHORTCODE}{MPESA_PASSKEY}{timestamp}".encode()
+            
+            ).decode()
+        
+        request_body = {
+            'BusinessShortCode': MPESA_SHORTCODE,
+            'Password': stk_password,
+            'Timestamp': timestamp,
+            'TransactionType': 'CustomerPayBillOnline',
+            'Amount': amount,
+            'PartyA': phone_number,
+            'PartyB': MPESA_SHORTCODE,
+            'PhoneNumber': phone_number,
+            'CallBackURL': CALLBACK_URL,
+            'AccountReference': 'CompanyXLTD',
+            'TransactionDesc': 'Payment of X'
+        }
+
+        response = requests.post(
+            f"{MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest",
+            headers=headers,
+            json=request_body
+        ).json()
+
+        return response
+    
+    except requests.RequestException as e:
+        print(f"Failed to initiate STK Push: {str(e)}")
+
+        
 
 def index(request):
     form = PaymentForm()
